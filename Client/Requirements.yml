@@ -1,0 +1,16 @@
+name: quant
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+dependencies:
+  - pip
+  - numpy
+  - pandas
+  - matplotlib
+  - seaborn
+  - jupyter
+  - pytables
+  - ta-lib
+  - pip:
+    - backtesting

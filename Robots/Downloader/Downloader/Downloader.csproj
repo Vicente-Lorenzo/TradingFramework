@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="cTrader.Automate" Version="1.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\..\Server\Api.cs">
+      <Link>Api.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\Server\Logger.cs">
+      <Link>Logger.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\Server\Strategy.cs">
+      <Link>Strategy.cs</Link>
+    </Compile>
+  </ItemGroup>
+</Project>
