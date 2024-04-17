@@ -3,7 +3,7 @@ using cAlgo.API;
 
 namespace cAlgo.Robots;
 
-[Robot(AccessRights = AccessRights.None)]
+[Robot(AccessRights = AccessRights.FullAccess)]
 public class Downloader : Robot
 {
     private Strategy _strategy;
