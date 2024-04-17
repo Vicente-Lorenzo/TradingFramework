@@ -29,11 +29,11 @@ public class Api
 
     public enum IdReceive
     {
-        Shutdown = 0,
-        Complete = 1,
-        BullishSignal = 2,
-        SidewaysSignal = 3,
-        BearishSignal = 4,
+        Complete = 0,
+        BullishSignal = 1,
+        SidewaysSignal = 2,
+        BearishSignal = 3,
+        ModifyPosition = 4,
     }
 
     public enum MarketDirection
@@ -172,14 +172,13 @@ public class Api
 
     public void PackBarClosed(Bar bar) { PackBar(IdSend.BarClosed, bar); }
 
-    public void PackTick(double ask, double bid, double spread)
+    public void PackTick(double ask, double bid)
     {
         using var memoryStream = new MemoryStream();
         using var writer = new BinaryWriter(memoryStream);
         writer.Write((byte)IdSend.Tick);
         writer.Write(ask);
         writer.Write(bid);
-        writer.Write(spread);
         Pack(memoryStream.ToArray());
     }
 
@@ -195,12 +194,12 @@ public class Api
         return (IdReceive)Unpack(sizeof(byte))[0];
     }
 
-    public (double, double, double) UnpackMarket()
+    public (double, double, double) UnpackPosition()
     {
         var content = Unpack(3 * sizeof(double));
         var volume = BitConverter.ToDouble(content, 0);
-        var slPips = BitConverter.ToDouble(content, 1);
-        var tpPips = BitConverter.ToDouble(content, 2);
-        return (volume, slPips, tpPips);
+        var slPrice = BitConverter.ToDouble(content, 1);
+        var tpPrice = BitConverter.ToDouble(content, 2);
+        return (volume, slPrice, tpPrice);
     }
 }

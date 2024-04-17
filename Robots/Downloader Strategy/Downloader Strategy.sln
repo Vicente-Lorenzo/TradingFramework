@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Downloader", "Downloader\Downloader.csproj", "{afafebef-fd3a-4a47-85a8-a7c2e3053a8e}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Downloader Strategy", "Downloader Strategy\Downloader Strategy.csproj", "{afafebef-fd3a-4a47-85a8-a7c2e3053a8e}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

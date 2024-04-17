@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from .Api import API, IdReceive
+from .Api import API, IdReceive, IdSend
 from .Machine import Machine
 
 
@@ -11,8 +11,12 @@ class Strategy(ABC):
         self.timeframe = timeframe
         self.logger = logger
 
-        self.risk_machine: Machine = self.create_risk_strategy()
-        self.signal_machine: Machine = self.create_signal_strategy()
+        self.risk_management: Machine = self.create_risk_management()
+        self.signal_machine: Machine = self.create_signal_management()
+
+        self.volume = 1000
+        self.sl_price = None
+        self.tp_price = None
 
     def run(self):
         with API(self.symbol, self.timeframe, self.logger) as self.api:
@@ -21,94 +25,77 @@ class Strategy(ABC):
                 match call:
                     case IdReceive.Shutdown.value:
                         self.logger.warning("Shutdown strategy and safely terminate operations")
-                        self.__call_shutdown()
-                        break
+                        return self.__call_shutdown()
                     case IdReceive.Complete.value:
-                        self.__call_complete()
+                        callback = self.__call_complete()
                     case IdReceive.Account.value:
-                        self.__call_account(self.api.unpack_account())
+                        callback = self.__call_account(self.api.unpack_account())
                     case IdReceive.Symbol.value:
-                        self.__call_symbol(self.api.unpack_symbol())
+                        callback = self.__call_symbol(self.api.unpack_symbol())
                     case IdReceive.PositionOpened.value:
-                        self.__call_position_opened(self.api.unpack_position())
+                        callback = self.__call_position_opened(self.api.unpack_position())
                     case IdReceive.PositionModified.value:
-                        self.__call_position_modified(self.api.unpack_position())
+                        callback = self.__call_position_modified(self.api.unpack_position())
                     case IdReceive.PositionClosed.value:
-                        self.__call_position_closed(self.api.unpack_position())
+                        callback = self.__call_position_closed(self.api.unpack_position())
                     case IdReceive.BarOpened.value:
-                        self.__call_bar_opened(self.api.unpack_bar())
+                        callback = self.__call_bar_opened(self.api.unpack_bar())
                     case IdReceive.BarClosed.value:
-                        self.__call_bar_closed(self.api.unpack_bar())
+                        callback = self.__call_bar_closed(self.api.unpack_bar())
                     case IdReceive.Tick.value:
-                        self.__call_tick(self.api.unpack_tick())
+                        callback = self.__call_tick(self.api.unpack_tick())
+                match callback:
+                    case IdSend.BullishSignal:
+                        self.api.pack_bullish_market(self.volume, self.sl_price, self.tp_price)
+                    case IdSend.SidewaysSignal:
+                        self.api.pack_sideways_market()
+                    case IdSend.BearishSignal:
+                        self.api.pack_bearish_market(self.volume, self.sl_price, self.tp_price)
+                    case IdSend.ModifyPosition:
+                        self.api.pack_modify_position(self.volume, self.sl_price, self.tp_price)
                     case _:
-                        self.logger.error(f"Received an unexpected call from the server: {call}")
-                        break
+                        self.api.pack_complete()
 
     @abstractmethod
-    def create_risk_strategy(self):
+    def create_risk_management(self):
         pass
 
     @abstractmethod
-    def create_signal_strategy(self):
+    def create_signal_management(self):
         pass
+
+    @staticmethod
+    def __call(risk_call, signal_call, *args):
+        risk_callback = risk_call(*args)
+        signal_callback = signal_call(*args)
+        return signal_callback if signal_callback is not IdSend.Complete else risk_callback
 
     def __call_shutdown(self):
-        if self.risk_machine is not None:
-            self.risk_machine.call_shutdown()
-        if self.signal_machine is not None:
-            self.signal_machine.call_shutdown()
+        return self.__call(self.risk_management.call_shutdown, self.signal_machine.call_shutdown)
 
     def __call_complete(self):
-        if self.risk_machine is not None:
-            self.risk_machine.call_complete()
-        if self.signal_machine is not None:
-            self.signal_machine.call_complete()
+        return self.__call(self.risk_management.call_complete, self.signal_machine.call_complete)
 
     def __call_account(self, account):
-        if self.risk_machine is not None:
-            self.risk_machine.call_account(account)
-        if self.signal_machine is not None:
-            self.signal_machine.call_account(account)
+        return self.__call(self.risk_management.call_account, self.signal_machine.call_account, account)
 
     def __call_symbol(self, symbol):
-        if self.risk_machine is not None:
-            self.risk_machine.call_symbol(symbol)
-        if self.signal_machine is not None:
-            self.signal_machine.call_symbol(symbol)
+        return self.__call(self.risk_management.call_symbol, self.signal_machine.call_symbol, symbol)
 
     def __call_position_opened(self, position):
-        if self.risk_machine is not None:
-            self.risk_machine.call_position_opened(position)
-        if self.signal_machine is not None:
-            self.signal_machine.call_position_opened(position)
+        return self.__call(self.risk_management.call_position_opened, self.signal_machine.call_position_opened, position)
 
     def __call_position_modified(self, position):
-        if self.risk_machine is not None:
-            self.risk_machine.call_position_modified(position)
-        if self.signal_machine is not None:
-            self.signal_machine.call_position_modified(position)
+        return self.__call(self.risk_management.call_position_modified, self.signal_machine.call_position_modified, position)
 
     def __call_position_closed(self, position):
-        if self.risk_machine is not None:
-            self.risk_machine.call_position_closed(position)
-        if self.signal_machine is not None:
-            self.signal_machine.call_position_closed(position)
+        return self.__call(self.risk_management.call_position_closed, self.signal_machine.call_position_closed, position)
 
     def __call_bar_opened(self, bar):
-        if self.risk_machine is not None:
-            self.risk_machine.call_bar_opened(bar)
-        if self.signal_machine is not None:
-            self.signal_machine.call_bar_opened(bar)
+        return self.__call(self.risk_management.call_bar_opened, self.signal_machine.call_bar_opened, bar)
 
     def __call_bar_closed(self, bar):
-        if self.risk_machine is not None:
-            self.risk_machine.call_bar_closed(bar)
-        if self.signal_machine is not None:
-            self.signal_machine.call_bar_closed(bar)
+        return self.__call(self.risk_management.call_bar_closed, self.signal_machine.call_bar_closed, bar)
 
     def __call_tick(self, tick):
-        if self.risk_machine is not None:
-            self.risk_machine.call_tick(tick)
-        if self.signal_machine is not None:
-            self.signal_machine.call_tick(tick)
+        return self.__call(self.risk_management.call_tick, self.signal_machine.call_tick, tick)

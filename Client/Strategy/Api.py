@@ -7,11 +7,11 @@ from datetime import datetime, timezone
 
 
 class IdSend(Enum):
-    Shutdown = 0
-    Complete = 1
-    BullishSignal = 2
-    SidewaysSignal = 3
-    BearishSignal = 4
+    Complete = 0
+    BullishSignal = 1
+    SidewaysSignal = 2
+    BearishSignal = 3
+    ModifyPosition = 4
 
 
 class IdReceive(Enum):
@@ -63,20 +63,20 @@ class API:
     def __pack(self, message):
         win32file.WriteFile(self.pipe, message)
 
-    def pack_shutdown(self):
-        self.__pack(struct.pack("<b", IdSend.Shutdown.value))
-
     def pack_complete(self):
         self.__pack(struct.pack("<b", IdSend.Complete.value))
 
-    def pack_bullish_market(self, volume, sl_pips=None, tp_pips=None):
-        self.__pack(struct.pack("<b3d", IdSend.BullishSignal.value, volume, sl_pips, tp_pips))
+    def pack_bullish_market(self, volume, sl_price, tp_price):
+        self.__pack(struct.pack("<b3d", IdSend.BullishSignal.value, volume, sl_price, tp_price))
 
     def pack_sideways_market(self):
         self.__pack(struct.pack("<b", IdSend.SidewaysSignal.value))
 
-    def pack_bearish_market(self, volume, sl_pips=None, tp_pips=None):
-        self.__pack(struct.pack("<b3d", IdSend.BearishSignal.value, volume, sl_pips, tp_pips))
+    def pack_bearish_market(self, volume, sl_price, tp_price):
+        self.__pack(struct.pack("<b3d", IdSend.BearishSignal.value, volume, sl_price, tp_price))
+
+    def pack_modify_position(self, volume, sl_price, tp_price):
+        self.__pack(struct.pack("<b3d", IdSend.ModifyPosition.value, volume, sl_price, tp_price))
 
     def __unpack(self, size):
         buffer = win32file.AllocateReadBuffer(struct.calcsize(size))
@@ -135,5 +135,4 @@ class API:
     def unpack_tick(self):
         content = self.__unpack(size="<2d")
         return {"Ask": content[0],
-                "Bid": content[1],
-                "Spread": content[2]}
+                "Bid": content[1]}

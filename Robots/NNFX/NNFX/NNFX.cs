@@ -30,19 +30,6 @@ public class NNFXStrategy : Strategy
 {
     public NNFXStrategy(Robot robot, Logger.Verbose verbose) : base(robot, verbose) { }
 
-    public override void OnStart()
-    {
-        for (var i = 0; i < Robot.Bars.Count-1; i++) { Api.PackBarClosed(Robot.Bars[i]); }
-        Api.PackComplete();
-        //Api.ReceiveMessage();
-    }
-
-    protected override void OnBarClosed(BarClosedEventArgs args)
-    {
-        Api.PackBarClosed(args.Bars.LastBar);
-        //Api.ReceiveMessage();
-    }
-    
     private bool UpdateMarketPosition(Position position, TradeType? direction, double volume)
     {
         if (position is null)

@@ -1,15 +1,17 @@
 using System;
+using System.Diagnostics;
 using cAlgo.API;
+using cAlgo.API.Internals;
 
 namespace cAlgo.Robots;
 
 public abstract class Strategy
 {
-    protected readonly Robot Robot;
-    protected readonly Logger Logger;
-    protected readonly Api Api;
+    public readonly Robot Robot;
+    public readonly Logger Logger;
+    public readonly Api Api;
 
-    protected Strategy(Robot robot, Logger.Verbose verbose)
+    public Strategy(Robot robot, string path, Logger.Verbose verbose)
     {
         Robot = robot;
         Logger = new Logger(robot, verbose);
@@ -23,22 +25,30 @@ public abstract class Strategy
 
         Api = new Api(Robot.SymbolName, Robot.TimeFrame.Name, Logger);
         Api.Initialize();
+
+        var scriptName = GetType().Name;
+        var scriptPath = $@"{path}\{scriptName}.py";
+        var scriptArgs = $"--verbose {verbose} --symbol {Robot.SymbolName} --timeframe {Robot.TimeFrame.Name}";
+        var tabTitle = $"{scriptName} {Robot.SymbolName} {Robot.TimeFrame.Name}";
+        var command = $"cmd.exe /k \"conda activate quant && python \"{scriptPath}\" {scriptArgs}\"";
+        Process.Start("wt.exe", $"--window 0 new-tab --title \"{tabTitle}\" {command}");
+
         Api.Connect();
     }
 
     public virtual void OnStart() { }
 
-    protected virtual void OnPositionOpened(PositionOpenedEventArgs position) { }
+    public virtual void OnPositionOpened(PositionOpenedEventArgs position) { }
 
-    protected virtual void OnPositionModified(PositionModifiedEventArgs position) { }
+    public virtual void OnPositionModified(PositionModifiedEventArgs position) { }
 
-    protected virtual void OnPositionClosed(PositionClosedEventArgs position) { }
+    public virtual void OnPositionClosed(PositionClosedEventArgs position) { }
 
-    protected virtual void OnBarOpened(BarOpenedEventArgs args) { }
+    public virtual void OnBarOpened(BarOpenedEventArgs args) { }
 
-    protected virtual void OnBarClosed(BarClosedEventArgs args) { }
+    public virtual void OnBarClosed(BarClosedEventArgs args) { }
 
-    protected virtual void OnTick(SymbolTickEventArgs args) { }
+    public virtual void OnTick(SymbolTickEventArgs args) { }
 
     public virtual void OnError(Error error)
     {
@@ -57,28 +67,60 @@ public abstract class Strategy
     public virtual void OnShutdown()
     {
         Logger.Warning("Shutdown strategy and safely terminate operations");
-        Api.PackShutdown();
+        CallShutdown();
         Api.Disconnect();
     }
 
-    public object ReceiveMessage()
+    public virtual void OnBullishSignal(double volume, double slPrice, double tpPrice) { }
+
+    public virtual void OnSidewaysSignal() { }
+
+    public virtual void OnBearishSignal(double volume, double slPrice, double tpPrice) { }
+
+    public virtual void OnModifyPosition(double volume, double slPrice, double tpPrice) { }
+
+    public void CallShutdown() { Api.PackShutdown(); }
+
+    public void CallComplete() { Api.PackComplete(); HandleCallback(); }
+
+    public void CallAccount(IAccount account) { Api.PackAccount(account); HandleCallback(); }
+
+    public void CallSymbol(Symbol symbol) { Api.PackSymbol(symbol); HandleCallback(); }
+
+    public void CallPositionOpened(Position position) { Api.PackPositionOpened(position); HandleCallback(); }
+
+    public void CallPositionModified(Position position) { Api.PackPositionModified(position); HandleCallback(); }
+
+    public void CallPositionClosed(Position position) { Api.PackPositionClosed(position); HandleCallback(); }
+
+    public void CallBarOpened(Bar bar) { Api.PackBarOpened(bar); HandleCallback(); }
+
+    public void CallBarClosed(Bar bar) { Api.PackBarClosed(bar); HandleCallback(); }
+
+    public void CallTick(double ask, double bid) { Api.PackTick(ask, bid); HandleCallback(); }
+
+
+    private void HandleCallback()
     {
         var call = Api.UnpackHeader();
+        double volume, slPrice, tpPrice;
         switch (call)
         {
-            case Api.IdReceive.Shutdown:
-                throw new Exception();
-            case Api.IdReceive.Complete:
-                return null;
             case Api.IdReceive.BullishSignal:
-                return (Api.MarketDirection.Bullish, Api.UnpackMarket());
+                (volume, slPrice, tpPrice) = Api.UnpackPosition();
+                OnBullishSignal(volume, slPrice, tpPrice);
+                break;
             case Api.IdReceive.SidewaysSignal:
-                return Api.MarketDirection.Sideways;
+                OnSidewaysSignal();
+                break;
             case Api.IdReceive.BearishSignal:
-                return (Api.MarketDirection.Bearish, Api.UnpackMarket());
-            default:
-                Logger.Error($"Received an unexpected message from the client: {call}");
-                throw new Exception();
+                (volume, slPrice, tpPrice) = Api.UnpackPosition();
+                OnBearishSignal(volume, slPrice, tpPrice);
+                break;
+            case Api.IdReceive.ModifyPosition:
+                (volume, slPrice, tpPrice) = Api.UnpackPosition();
+                OnModifyPosition(volume, slPrice, tpPrice);
+                break;
         }
     }
 }
