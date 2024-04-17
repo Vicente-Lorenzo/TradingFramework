@@ -1,7 +1,6 @@
 # ML Trading System
 
 ## To Dos:
-- Make the server call the client automatically
 - Add time feature (eg. hour feature with sin or cos)
 - News event detector using spreads and volume changes
 
