@@ -45,20 +45,19 @@ class API:
             self.pipe = win32file.CreateFile(f"\\\\.\\pipe\\{self.symbol}\\{self.timeframe}",
                                              win32file.GENERIC_READ | win32file.GENERIC_WRITE, 0, None,
                                              win32file.OPEN_EXISTING, 0, None)
-            self.logger.info(f"Connected to the server at {self.symbol} ({self.timeframe})")
+            self.logger.info(f"API {self.symbol} {self.timeframe}: Connected")
         except pywintypes.error as e:
             if e.winerror == 2:
-                self.logger.error(f"Unable to connect to the server at {self.symbol} ({self.timeframe})")
+                self.logger.error(f"API {self.symbol} {self.timeframe}: Unable to connect")
             elif e.winerror == 231:
-                self.logger.error(
-                    f"Another client is already connected to the server at {self.symbol} ({self.timeframe})")
+                self.logger.error(f"API {self.symbol} {self.timeframe}: Another client is connected")
             raise
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.pipe:
             win32file.CloseHandle(self.pipe)
-            self.logger.info(f"Disconnected from the server at {self.symbol} ({self.timeframe})")
+            self.logger.info(f"API {self.symbol} {self.timeframe}: Disconnected")
 
     def __pack(self, message):
         win32file.WriteFile(self.pipe, message)

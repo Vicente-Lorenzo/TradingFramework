@@ -27,12 +27,12 @@ class Database:
             total_count = len(data)
             saved_count = total_count - existing_count
             updated_count = saving_count - saved_count
-            self.logger.info(f"Saved data to {self.symbol} ({self.timeframe}) database [Saved: {saved_count} | Updated: {updated_count} | Total: {total_count}]")
+            self.logger.info(f"Database {self.symbol} {self.timeframe} {self.name}: [Saved {saved_count} | Updated: {updated_count} | Total: {total_count}]")
 
     def load_data(self, start=None, end=None, head=None, tail=None):
         with pd.HDFStore(self.file_path, complevel=9, mode="r") as store:
             data = store[self.name].loc[start:end].iloc[-tail if tail else None:head]
-            self.logger.info(f"Loaded data from {self.symbol} ({self.timeframe}) database [Loaded rows: {len(data)}]")
+            self.logger.info(f"Database {self.symbol} {self.timeframe} {self.name}: [Loaded : {len(data)}]")
             return data
 
     def clean_data(self):
@@ -42,4 +42,4 @@ class Database:
                 temp_store[key] = store[key]
         os.remove(self.file_path)
         os.rename(temp_path, self.file_path)
-        self.logger.info(f"Cleaned and flushed data in {self.symbol} ({self.timeframe}) database")
+        self.logger.info(f"Database {self.symbol} {self.timeframe} {self.name}: Cleaned and Flushed")

@@ -22,7 +22,7 @@ class Machine:
     def __call(self, transition: Transition, *args):
         if transition is not None and transition.validate_trigger(*args):
             if transition.reason is not None:
-                self.logger.info(f"Updating [{self.name}]: [{self.at.name}] -> [{transition.reason}] -> [{transition.to.name}]")
+                self.logger.info(f"Machine {self.name}: [{self.at.name}] > {transition.reason} > [{transition.to.name}]")
             self.at = transition.to
             return transition.perform_action(*args)
 

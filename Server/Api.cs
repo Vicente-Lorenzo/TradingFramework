@@ -58,13 +58,13 @@ public class Api
             1,
             PipeTransmissionMode.Byte,
             PipeOptions.Asynchronous);
-        _logger.Info("Connection pipe initialized successfully");
+        _logger.Info($"API {_symbol} {_timeframe}: Pipe initialized");
     }
 
     public void Connect()
     {
         _pipe.WaitForConnection();
-        _logger.Info($"Connected to the client at {_symbol} ({_timeframe})");
+        _logger.Info($"API {_symbol} {_timeframe}: Connected");
     }
 
     public void Disconnect()
@@ -72,7 +72,7 @@ public class Api
         if (_pipe is null) return;
         _pipe.Close();
         _pipe.Dispose();
-        _logger.Info($"Disconnected from the server at {_symbol} ({_timeframe})");
+        _logger.Info($"API {_symbol} {_timeframe}: Disconnected");
     }
 
     private void Pack(byte[] message)
