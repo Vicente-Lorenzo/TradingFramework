@@ -1,9 +1,10 @@
 class Transition:
 
-    def __init__(self, trigger, action, to_state):
+    def __init__(self, trigger, action, to, reason):
         self.trigger = trigger
         self.action = action
-        self.to_state = to_state
+        self.to = to
+        self.reason = reason
 
     def validate_trigger(self, *args):
         return self.trigger is None or self.trigger(*args)

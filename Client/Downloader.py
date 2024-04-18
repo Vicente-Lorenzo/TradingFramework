@@ -15,21 +15,22 @@ class Downloader(Strategy):
         self.data = []
 
     def create_risk_management(self):
-        machine = Machine(self.symbol, self.timeframe, self.logger)
-        machine.create_state()
+        machine = Machine(None, self.symbol, self.timeframe, self.logger)
+        machine.create_state(None, True)
         return machine
 
     def create_signal_management(self):
-        machine = Machine(self.symbol, self.timeframe, self.logger)
+        machine = Machine("Main", self.symbol, self.timeframe, self.logger)
 
-        state0 = machine.create_state()
-        state1 = machine.create_state()
+        state0 = machine.create_state(name="Start", end=False)
+        state1 = machine.create_state(name="Section", end=False)
+        state2 = machine.create_state(name="End", end=True)
 
-        state0.on_bar_closed(None, self.append_data, state0)
-        state0.on_complete(None, None, state1)
+        state0.on_bar_closed(trigger=None, action=self.append_data, to=state0, reason=None)
+        state0.on_complete(trigger=None, action=None, to=state1, reason="Complete")
 
-        state1.on_bar_closed(None, self.append_data, state1)
-        state1.on_shutdown(None, self.save_data, state1)
+        state1.on_bar_closed(trigger=None, action=self.append_data, to=state1, reason=None)
+        state1.on_shutdown(trigger=None, action=self.save_data, to=state2, reason="Complete")
 
         return machine
 

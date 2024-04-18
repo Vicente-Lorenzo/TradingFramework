@@ -79,7 +79,7 @@ public abstract class Strategy
 
     public virtual void OnModifyPosition(double volume, double slPrice, double tpPrice) { }
 
-    public void CallShutdown() { Api.PackShutdown(); }
+    public void CallShutdown() { Api.PackShutdown(); HandleCallback(); }
 
     public void CallComplete() { Api.PackComplete(); HandleCallback(); }
 
