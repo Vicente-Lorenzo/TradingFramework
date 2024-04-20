@@ -14,11 +14,6 @@ class Downloader(Strategy):
         self.db = db
         self.data = []
 
-    def create_risk_management(self):
-        machine = Machine(None, self.symbol, self.timeframe, self.logger)
-        machine.create_state(None, True)
-        return machine
-
     def create_signal_management(self):
         machine = Machine("Main", self.symbol, self.timeframe, self.logger)
 

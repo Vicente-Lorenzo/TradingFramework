@@ -11,12 +11,9 @@ class Strategy(ABC):
         self.timeframe = timeframe
         self.logger = logger
 
+        self.money_machine: Machine = self.create_money_management()
         self.signal_machine: Machine = self.create_signal_management()
         self.risk_machine: Machine = self.create_risk_management()
-
-        self.volume = 1000
-        self.sl_price = None
-        self.tp_price = None
 
     def run(self):
         with API(self.symbol, self.timeframe, self.logger) as self.api:
@@ -56,13 +53,19 @@ class Strategy(ABC):
                     case IdSend.ModifyPosition:
                         self.api.pack_modify_position(self.volume, self.sl_price, self.tp_price)
 
-    @abstractmethod
-    def create_risk_management(self):
-        pass
+    def __create_dummy_machine(self):
+        machine = Machine(None, self.symbol, self.timeframe, self.logger)
+        machine.create_state(None, True)
+        return machine
 
-    @abstractmethod
+    def create_money_management(self):
+        return self.__create_dummy_machine()
+
+    def create_risk_management(self):
+        return self.__create_dummy_machine()
+
     def create_signal_management(self):
-        pass
+        return self.__create_dummy_machine()
 
     @staticmethod
     def __call(signal_call, risk_call, *args):

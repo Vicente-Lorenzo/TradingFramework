@@ -4,18 +4,21 @@ using cAlgo.API;
 namespace cAlgo.Robots;
 
 [Robot(AccessRights = AccessRights.FullAccess)]
-public class NNFX : Robot
+public class NNFXStrategy : Robot
 {
     private Strategy _strategy;
 
     private const string GeneralGroup = "General Settings";
 
-    [Parameter("Verbose Level", DefaultValue = Logger.Verbose.Debug, Group = GeneralGroup)]
+    [Parameter("Path", DefaultValue = "C:\\Users\\vicen\\OneDrive\\Documents\\cAlgo\\Sources\\Client", Group = GeneralGroup)]
+    public string Path { get; set; }
+    [Parameter("Verbose", DefaultValue = Logger.Verbose.Debug, Group = GeneralGroup)]
     public Logger.Verbose Verbose { get; set; }
+
 
     protected override void OnStart()
     {
-        _strategy = new NNFXStrategy(this, Verbose);
+        _strategy = new NNFX(this, Path, Verbose);
         _strategy.OnStart();
     }
 
@@ -26,36 +29,38 @@ public class NNFX : Robot
     protected override void OnStop() { _strategy.OnShutdown(); }
 }
 
-public class NNFXStrategy : Strategy
+public class NNFX : Strategy
 {
-    public NNFXStrategy(Robot robot, Logger.Verbose verbose) : base(robot, verbose) { }
+    public NNFX(Robot robot, string path, Logger.Verbose verbose) : base(robot, path, verbose) { }
 
-    private bool UpdateMarketPosition(Position position, TradeType? direction, double volume)
+    public override void OnStart()
     {
-        if (position is null)
-        {
-            if (direction is TradeType.Buy)
-                return Robot.ExecuteMarketOrder(TradeType.Buy, Robot.SymbolName, volume, Robot.InstanceId).IsSuccessful;
-            if (direction is TradeType.Sell)
-                return Robot.ExecuteMarketOrder(TradeType.Sell, Robot.SymbolName, volume, Robot.InstanceId).IsSuccessful;
-            return true;
-        }
-        if (position.TradeType is TradeType.Buy)
-        {
-            if (direction is null)
-                return position.Close().IsSuccessful;
-            if (direction is TradeType.Sell)
-                return position.Close().IsSuccessful && Robot.ExecuteMarketOrder(TradeType.Sell, Robot.SymbolName, volume, Robot.InstanceId).IsSuccessful;
-            return true;
-        }
-        if (position.TradeType is TradeType.Sell)
-        {
-            if (direction is null)
-                return position.Close().IsSuccessful;
-            if (direction is TradeType.Buy)
-                return position.Close().IsSuccessful && Robot.ExecuteMarketOrder(TradeType.Buy, Robot.SymbolName, volume, Robot.InstanceId).IsSuccessful;
-            return true;
-        }
-        return false;
+        for (var i = 0; i < Robot.Bars.Count-1; i++) { CallBarClosed(Robot.Bars[i]); }
+        CallComplete();
+    }
+
+    public override void OnPositionOpened(PositionOpenedEventArgs args)
+    {
+        CallPositionOpened(args.Position);
+    }
+
+    public override void OnPositionModified(PositionModifiedEventArgs args)
+    {
+        CallPositionModified(args.Position);
+    }
+
+    public override void OnPositionClosed(PositionClosedEventArgs args)
+    {
+        CallPositionClosed(args.Position);
+    }
+
+    public override void OnBarClosed(BarClosedEventArgs args)
+    {
+        CallBarClosed(args.Bars.LastBar);
+    }
+
+    public override void OnTick(SymbolTickEventArgs args)
+    {
+        //CallTick(args.Ask, args.Bid);
     }
 }
