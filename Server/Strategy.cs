@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Diagnostics;
 using cAlgo.API;
 using cAlgo.API.Internals;
@@ -11,7 +12,7 @@ public abstract class Strategy
     public readonly Logger Logger;
     public readonly Api Api;
 
-    public Strategy(Robot robot, string path, Logger.Verbose verbose)
+    public Strategy(Robot robot, Logger.Verbose verbose)
     {
         Robot = robot;
         Logger = new Logger(robot, verbose);
@@ -26,8 +27,9 @@ public abstract class Strategy
         Api = new Api(Robot.SymbolName, Robot.TimeFrame.Name, Logger);
         Api.Initialize();
 
+        var baseDirectory = new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName;
         var scriptName = GetType().Name;
-        var scriptPath = $@"{path}\{scriptName}.py";
+        var scriptPath = $@"{baseDirectory}\Sources\Client\{scriptName}.py";
         var scriptArgs = $"--verbose {verbose} --symbol {Robot.SymbolName} --timeframe {Robot.TimeFrame.Name}";
         var tabTitle = $"{scriptName} {Robot.SymbolName} {Robot.TimeFrame.Name}";
         var command = $"cmd.exe /k \"conda activate quant && python \"{scriptPath}\" {scriptArgs}\"";
@@ -71,13 +73,13 @@ public abstract class Strategy
         Api.Disconnect();
     }
 
-    public virtual void OnBullishSignal(double volume, double slPrice, double tpPrice) { }
+    public virtual void OnBullishSignal(double volumeValue, double slValue, double tpValue) { }
 
     public virtual void OnSidewaysSignal() { }
 
-    public virtual void OnBearishSignal(double volume, double slPrice, double tpPrice) { }
+    public virtual void OnBearishSignal(double volumeValue, double slValue, double tpValue) { }
 
-    public virtual void OnModifyPosition(double volume, double slPrice, double tpPrice) { }
+    public virtual void OnModifyPosition(double volumeValue, double slValue, double tpValue) { }
 
     public void CallShutdown() { Api.PackShutdown(); HandleCallback(); }
 
@@ -103,23 +105,25 @@ public abstract class Strategy
     private void HandleCallback()
     {
         var call = Api.UnpackHeader();
-        double volume, slPrice, tpPrice;
+        double volumeValue, slValue, tpValue;
         switch (call)
         {
+            case Api.IdReceive.Complete:
+                break;
             case Api.IdReceive.BullishSignal:
-                (volume, slPrice, tpPrice) = Api.UnpackPosition();
-                OnBullishSignal(volume, slPrice, tpPrice);
+                (volumeValue, slValue, tpValue) = Api.UnpackPosition();
+                OnBullishSignal(volumeValue, slValue, tpValue);
                 break;
             case Api.IdReceive.SidewaysSignal:
                 OnSidewaysSignal();
                 break;
             case Api.IdReceive.BearishSignal:
-                (volume, slPrice, tpPrice) = Api.UnpackPosition();
-                OnBearishSignal(volume, slPrice, tpPrice);
+                (volumeValue, slValue, tpValue) = Api.UnpackPosition();
+                OnBearishSignal(volumeValue, slValue, tpValue);
                 break;
             case Api.IdReceive.ModifyPosition:
-                (volume, slPrice, tpPrice) = Api.UnpackPosition();
-                OnModifyPosition(volume, slPrice, tpPrice);
+                (volumeValue, slValue, tpValue) = Api.UnpackPosition();
+                OnModifyPosition(volumeValue, slValue, tpValue);
                 break;
         }
     }

@@ -65,17 +65,17 @@ class API:
     def pack_complete(self):
         self.__pack(struct.pack("<b", IdSend.Complete.value))
 
-    def pack_bullish_market(self, volume, sl_price, tp_price):
-        self.__pack(struct.pack("<b3d", IdSend.BullishSignal.value, volume, sl_price, tp_price))
+    def pack_bullish_market(self, volume_value, sl_value, tp_value):
+        self.__pack(struct.pack("<b3d", IdSend.BullishSignal.value, volume_value, sl_value, tp_value))
 
     def pack_sideways_market(self):
         self.__pack(struct.pack("<b", IdSend.SidewaysSignal.value))
 
-    def pack_bearish_market(self, volume, sl_price, tp_price):
-        self.__pack(struct.pack("<b3d", IdSend.BearishSignal.value, volume, sl_price, tp_price))
+    def pack_bearish_market(self, volume_value, sl_value, tp_value):
+        self.__pack(struct.pack("<b3d", IdSend.BearishSignal.value, volume_value, sl_value, tp_value))
 
-    def pack_modify_position(self, volume, sl_price, tp_price):
-        self.__pack(struct.pack("<b3d", IdSend.ModifyPosition.value, volume, sl_price, tp_price))
+    def pack_modify_position(self, volume_value, sl_value, tp_value):
+        self.__pack(struct.pack("<b3d", IdSend.ModifyPosition.value, volume_value, sl_value, tp_value))
 
     def __unpack(self, size):
         buffer = win32file.AllocateReadBuffer(struct.calcsize(size))

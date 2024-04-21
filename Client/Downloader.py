@@ -26,7 +26,7 @@ class Downloader(Strategy):
         state0.on_shutdown(trigger=None, action=self.save_data, to=state2, reason="Error")
 
         state1.on_bar_closed(trigger=None, action=self.append_data, to=state1, reason=None)
-        state1.on_shutdown(trigger=None, action=self.save_data, to=state2, reason="Complete")
+        state1.on_shutdown(trigger=None, action=self.save_data, to=state2, reason="Terminated")
 
         return machine
 

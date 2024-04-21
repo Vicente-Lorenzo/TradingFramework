@@ -10,15 +10,13 @@ public class DownloaderStrategy : Robot
 
     private const string GeneralGroup = "General Settings";
 
-    [Parameter("Path", DefaultValue = "C:\\Users\\vicen\\OneDrive\\Documents\\cAlgo\\Sources\\Client", Group = GeneralGroup)]
-    public string Path { get; set; }
     [Parameter("Verbose", DefaultValue = Logger.Verbose.Debug, Group = GeneralGroup)]
     public Logger.Verbose Verbose { get; set; }
 
 
     protected override void OnStart()
     {
-        _strategy = new Downloader(this, Path, Verbose);
+        _strategy = new Downloader(this, Verbose);
         _strategy.OnStart();
     }
 
@@ -31,7 +29,7 @@ public class DownloaderStrategy : Robot
 
 public class Downloader : Strategy
 {
-    public Downloader(Robot robot, string path, Logger.Verbose verbose) : base(robot, path, verbose) { }
+    public Downloader(Robot robot, Logger.Verbose verbose) : base(robot, verbose) { }
 
     public override void OnStart()
     {

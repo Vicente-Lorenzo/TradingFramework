@@ -27,7 +27,7 @@ class Database:
             total_count = len(data)
             saved_count = total_count - existing_count
             updated_count = saving_count - saved_count
-            self.logger.info(f"Database {self.symbol} {self.timeframe} {self.name}: [Saved {saved_count} | Updated: {updated_count} | Total: {total_count}]")
+            self.logger.info(f"Database {self.symbol} {self.timeframe} {self.name}: [Saved: {saved_count} | Updated: {updated_count} | Total: {total_count}]")
 
     def load_data(self, start=None, end=None, head=None, tail=None):
         with pd.HDFStore(self.file_path, complevel=9, mode="r") as store:

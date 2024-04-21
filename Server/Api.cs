@@ -131,7 +131,7 @@ public class Api
             using var writer = new BinaryWriter(memoryStream);
             writer.Write((byte)positionType);
             writer.Write(((DateTimeOffset)position.EntryTime).ToUnixTimeMilliseconds());
-            writer.Write((byte)position.TradeType);
+            writer.Write((sbyte)(position.TradeType == TradeType.Buy ? MarketDirection.Bullish : MarketDirection.Bearish));
             writer.Write(position.VolumeInUnits);
             writer.Write(position.Quantity);
             writer.Write(position.EntryPrice);
@@ -197,9 +197,9 @@ public class Api
     public (double, double, double) UnpackPosition()
     {
         var content = Unpack(3 * sizeof(double));
-        var volume = BitConverter.ToDouble(content, 0);
-        var slPrice = BitConverter.ToDouble(content, 1);
-        var tpPrice = BitConverter.ToDouble(content, 2);
-        return (volume, slPrice, tpPrice);
+        var volumeValue = BitConverter.ToDouble(content, 0 * sizeof(double));
+        var slValue = BitConverter.ToDouble(content, 1 * sizeof(double));
+        var tpValue = BitConverter.ToDouble(content, 2 * sizeof(double));
+        return (volumeValue, slValue, tpValue);
     }
 }

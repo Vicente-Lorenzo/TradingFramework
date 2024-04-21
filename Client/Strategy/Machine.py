@@ -21,10 +21,11 @@ class Machine:
 
     def __call(self, transition: Transition, *args):
         if transition is not None and transition.validate_trigger(*args):
+            ret = transition.perform_action(*args)
             if transition.reason is not None:
                 self.logger.info(f"Machine {self.name}: [{self.at.name}] > {transition.reason} > [{transition.to.name}]")
             self.at = transition.to
-            return transition.perform_action(*args)
+            return ret
 
     def call_shutdown(self):
         return self.__call(self.at.shutdown_transition)

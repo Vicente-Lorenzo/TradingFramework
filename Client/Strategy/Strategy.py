@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from .Api import API, IdReceive, IdSend
 from .Machine import Machine
@@ -11,9 +11,12 @@ class Strategy(ABC):
         self.timeframe = timeframe
         self.logger = logger
 
-        self.money_machine: Machine = self.create_money_management()
         self.signal_machine: Machine = self.create_signal_management()
         self.risk_machine: Machine = self.create_risk_management()
+
+        self.position_volume_value = None
+        self.position_sl_value = None
+        self.position_tp_value = None
 
     def run(self):
         with API(self.symbol, self.timeframe, self.logger) as self.api:
@@ -42,24 +45,21 @@ class Strategy(ABC):
                     case IdReceive.Tick.value:
                         callback = self.__call_tick(self.api.unpack_tick())
                 match callback:
-                    case IdSend.Complete:
+                    case IdSend.Complete.value:
                         self.api.pack_complete()
-                    case IdSend.BullishSignal:
-                        self.api.pack_bullish_market(self.volume, self.sl_price, self.tp_price)
-                    case IdSend.SidewaysSignal:
+                    case IdSend.BullishSignal.value:
+                        self.api.pack_bullish_market(self.position_volume_value, self.position_sl_value, self.position_tp_value)
+                    case IdSend.SidewaysSignal.value:
                         self.api.pack_sideways_market()
-                    case IdSend.BearishSignal:
-                        self.api.pack_bearish_market(self.volume, self.sl_price, self.tp_price)
-                    case IdSend.ModifyPosition:
-                        self.api.pack_modify_position(self.volume, self.sl_price, self.tp_price)
+                    case IdSend.BearishSignal.value:
+                        self.api.pack_bearish_market(self.position_volume_value, self.position_sl_value, self.position_tp_value)
+                    case IdSend.ModifyPosition.value:
+                        self.api.pack_modify_position(self.position_volume_value, self.position_sl_value, self.position_tp_value)
 
     def __create_dummy_machine(self):
         machine = Machine(None, self.symbol, self.timeframe, self.logger)
         machine.create_state(None, True)
         return machine
-
-    def create_money_management(self):
-        return self.__create_dummy_machine()
 
     def create_risk_management(self):
         return self.__create_dummy_machine()
@@ -70,12 +70,12 @@ class Strategy(ABC):
     @staticmethod
     def __call(signal_call, risk_call, *args):
         signal_callback = signal_call(*args)
-        risk_callback = risk_call(*args)
         if signal_callback is not None:
             return signal_callback
+        risk_callback = risk_call(*args)
         if risk_callback is not None:
             return risk_callback
-        return IdSend.Complete
+        return IdSend.Complete.value
 
     def __call_shutdown(self):
         return self.__call(self.signal_machine.call_shutdown, self.risk_machine.call_shutdown)

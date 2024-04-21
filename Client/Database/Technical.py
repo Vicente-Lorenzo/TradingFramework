@@ -105,15 +105,15 @@ def STOCHFOSC(lib, data, fastk_period, fastd_period):
     return fastk - fastd
 
 
-def offline_technical_analysis(data):
-    for name, indicator in Indicators.items():
+def offline_technical(data, indicators):
+    for name, indicator in indicators.items():
         data[name] = indicator(talib, data)
     return data
 
 
-def online_technical_analysis(data):
+def online_technical(data, indicators):
     index = data.index[-1]
-    for name, indicator in Indicators.items():
+    for name, indicator in indicators.items():
         value = indicator(talib.stream, data)
         data.at[index, name] = value
     return data
