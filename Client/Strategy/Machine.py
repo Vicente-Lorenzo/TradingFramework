@@ -39,20 +39,29 @@ class Machine:
     def call_symbol(self, symbol):
         return self.__call(self.at.symbol_transition, symbol)
 
-    def call_position_opened(self, position):
-        return self.__call(self.at.position_opened_transition, position)
+    def call_opened_buy(self, position):
+        return self.__call(self.at.opened_buy_transition, position)
 
-    def call_position_modified(self, position):
-        return self.__call(self.at.position_modified_transition, position)
+    def call_opened_sell(self, position):
+        return self.__call(self.at.opened_sell_transition, position)
 
-    def call_position_closed(self, position):
-        return self.__call(self.at.position_closed_transition, position)
+    def call_modified_volume(self, position):
+        return self.__call(self.at.modified_volume_transition, position)
 
-    def call_bar_opened(self, bar):
-        return self.__call(self.at.bar_opened_transition, bar)
+    def call_modified_stop_loss(self, position):
+        return self.__call(self.at.modified_stop_loss_transition, position)
 
-    def call_bar_closed(self, bar):
-        return self.__call(self.at.bar_closed_transition, bar)
+    def call_modified_take_profit(self, position):
+        return self.__call(self.at.modified_take_profit_transition, position)
+
+    def call_closed_buy(self, position):
+        return self.__call(self.at.closed_buy_transition, position)
+
+    def call_closed_sell(self, position):
+        return self.__call(self.at.closed_sell_transition, position)
+
+    def call_bar(self, bar):
+        return self.__call(self.at.bar_transition, bar)
 
     def call_tick(self, tick):
         return self.__call(self.at.tick_transition, tick)

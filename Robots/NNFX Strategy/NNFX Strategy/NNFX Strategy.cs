@@ -14,11 +14,7 @@ public class NNFXStrategy : Robot
     public Logger.Verbose Verbose { get; set; }
 
 
-    protected override void OnStart()
-    {
-        _strategy = new NNFX(this, Verbose);
-        _strategy.OnStart();
-    }
+    protected override void OnStart() { _strategy = new NNFX(this, Verbose, false); }
 
     protected override void OnError(Error error) { _strategy.OnError(error); }
 
@@ -29,76 +25,48 @@ public class NNFXStrategy : Robot
 
 public class NNFX : Strategy
 {
-    public NNFX(Robot robot, Logger.Verbose verbose) : base(robot, verbose) { }
+    public NNFX(Robot robot, Logger.Verbose verbose, bool global) : base(robot, verbose, global) { }
 
-    public override void OnStart()
-    {
-        CallSymbol(Robot.Symbol);
-        for (var i = 0; i < Robot.Bars.Count-1; i++) { CallBarClosed(Robot.Bars[i]); }
-        CallComplete();
-    }
-
-    public override void OnPositionOpened(PositionOpenedEventArgs args)
-    {
-        if (string.Equals(args.Position.Label, Robot.InstanceId))
-            CallPositionOpened(args.Position);
-    }
-
-    public override void OnPositionModified(PositionModifiedEventArgs args)
-    {
-        if (string.Equals(args.Position.Label, Robot.InstanceId))
-            CallPositionModified(args.Position);
-    }
-
-    public override void OnPositionClosed(PositionClosedEventArgs args)
-    {
-        if (string.Equals(args.Position.Label, Robot.InstanceId))
-            CallPositionClosed(args.Position);
-    }
-
-    public override void OnBarClosed(BarClosedEventArgs args)
-    {
-        CallBarClosed(args.Bars.LastBar);
-    }
-
-    public override void OnTick(SymbolTickEventArgs args)
-    {
-        CallTick(args.Ask, args.Bid);
-    }
-
-    public override void OnBullishSignal(double volumeValue, double slValue, double tpValue)
+    protected override void OnBullishSignal(double riskPercentage, double slPips, double tpPips)
     {
         var position = Robot.Positions.Find(Robot.InstanceId);
         if (position != null)
             Robot.ClosePosition(position);
-        var volume = Robot.Symbol.VolumeForProportionalRisk(ProportionalAmountType.Balance, volumeValue, slValue, RoundingMode.Down);
-        Robot.ExecuteMarketOrder(TradeType.Buy, Robot.SymbolName, volume, Robot.InstanceId, slValue, null);
+        var volume = Robot.Symbol.VolumeForProportionalRisk(ProportionalAmountType.Balance, riskPercentage, slPips, RoundingMode.Down);
+        Robot.ExecuteMarketOrder(TradeType.Buy, Robot.SymbolName, volume, Robot.InstanceId, slPips, null);
     }
 
-    public override void OnSidewaysSignal()
+    protected override void OnSidewaysSignal()
     {
         var position = Robot.Positions.Find(Robot.InstanceId);
         if (position != null)
             Robot.ClosePosition(position);
     }
 
-    public override void OnBearishSignal(double volumeValue, double slValue, double tpValue)
+    protected override void OnBearishSignal(double riskPercentage, double slPips, double tpPips)
     {
 
         var position = Robot.Positions.Find(Robot.InstanceId);
         if (position != null)
             Robot.ClosePosition(position);
-        var volume = Robot.Symbol.VolumeForProportionalRisk(ProportionalAmountType.Balance, volumeValue, slValue, RoundingMode.Down);
-        Robot.ExecuteMarketOrder(TradeType.Sell, Robot.SymbolName, volume, Robot.InstanceId, slValue, null);
+        var volume = Robot.Symbol.VolumeForProportionalRisk(ProportionalAmountType.Balance, riskPercentage, slPips, RoundingMode.Down);
+        Robot.ExecuteMarketOrder(TradeType.Sell, Robot.SymbolName, volume, Robot.InstanceId, slPips, null);
     }
 
-    public override void OnModifyPosition(double volumeValue, double slValue, double tpValue)
+    protected override void OnModifyVolume(int pid, double volumePercentage)
     {
         var position = Robot.Positions.Find(Robot.InstanceId);
-        if (position == null)
+        if (position == null || position.Id != pid)
             return;
-        var volume = Robot.Symbol.NormalizeVolumeInUnits(volumeValue, RoundingMode.Down);
+        var volume = Robot.Symbol.NormalizeVolumeInUnits(volumePercentage, RoundingMode.Down);
         Robot.ModifyPosition(position, volume);
-        Robot.ModifyPosition(position, slValue, null);
+    }
+
+    protected override void OnModifyStopLoss(int pid, double slPrice)
+    {
+        var position = Robot.Positions.Find(Robot.InstanceId);
+        if (position == null || position.Id != pid)
+            return;
+        Robot.ModifyPosition(position, slPrice, null);
     }
 }

@@ -10,4 +10,4 @@ class Transition:
         return self.trigger is None or self.trigger(*args)
 
     def perform_action(self, *args):
-        return self.action(*args) if self.action is not None else None
+        return self.action(*args) if self.action is not None else (None, None)

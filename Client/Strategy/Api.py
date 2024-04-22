@@ -11,7 +11,9 @@ class IdSend(Enum):
     BullishSignal = 1
     SidewaysSignal = 2
     BearishSignal = 3
-    ModifyPosition = 4
+    ModifyVolume = 4
+    ModifyStopLoss = 5
+    ModifyTakeProfit = 6
 
 
 class IdReceive(Enum):
@@ -19,12 +21,15 @@ class IdReceive(Enum):
     Complete = 1
     Account = 2
     Symbol = 3
-    PositionOpened = 4
-    PositionModified = 5
-    PositionClosed = 6
-    BarOpened = 7
-    BarClosed = 8
-    Tick = 9
+    OpenedBuy = 4
+    OpenedSell = 5
+    ModifiedVolume = 6
+    ModifiedStopLoss = 7
+    ModifiedTakeProfit = 8
+    ClosedBuy = 9
+    ClosedSell = 10
+    Bar = 12
+    Tick = 13
 
 
 class MarketDirection(Enum):
@@ -63,19 +68,25 @@ class API:
         win32file.WriteFile(self.pipe, message)
 
     def pack_complete(self):
-        self.__pack(struct.pack("<b", IdSend.Complete.value))
+        self.__pack(struct.pack("<1b", IdSend.Complete.value))
 
-    def pack_bullish_market(self, volume_value, sl_value, tp_value):
-        self.__pack(struct.pack("<b3d", IdSend.BullishSignal.value, volume_value, sl_value, tp_value))
+    def pack_bullish_signal(self, volume, sl_pips, tp_pips):
+        self.__pack(struct.pack("<1b3d", IdSend.BullishSignal.value, volume, sl_pips, tp_pips))
 
-    def pack_sideways_market(self):
-        self.__pack(struct.pack("<b", IdSend.SidewaysSignal.value))
+    def pack_sideways_signal(self):
+        self.__pack(struct.pack("<1b", IdSend.SidewaysSignal.value))
 
-    def pack_bearish_market(self, volume_value, sl_value, tp_value):
-        self.__pack(struct.pack("<b3d", IdSend.BearishSignal.value, volume_value, sl_value, tp_value))
+    def pack_bearish_signal(self, volume, sl_pips, tp_pips):
+        self.__pack(struct.pack("<1b3d", IdSend.BearishSignal.value, volume, sl_pips, tp_pips))
 
-    def pack_modify_position(self, volume_value, sl_value, tp_value):
-        self.__pack(struct.pack("<b3d", IdSend.ModifyPosition.value, volume_value, sl_value, tp_value))
+    def pack_modify_volume(self, pid, volume):
+        self.__pack(struct.pack("<1b1i1d", IdSend.ModifyVolume.value, pid, volume))
+
+    def pack_modify_stop_loss(self, pid, sl_price):
+        self.__pack(struct.pack("<1b1i1d", IdSend.ModifyStopLoss.value, pid, sl_price))
+
+    def pack_modify_take_profit(self, pid, tp_price):
+        self.__pack(struct.pack("<1b1i1d", IdSend.ModifyTakeProfit.value, pid, tp_price))
 
     def __unpack(self, size):
         buffer = win32file.AllocateReadBuffer(struct.calcsize(size))
@@ -83,55 +94,27 @@ class API:
         return struct.unpack(size, content)
 
     def unpack_header(self):
-        return self.__unpack("<b")[0]
+        return self.__unpack("<1b")[0]
 
     def unpack_account(self):
-        content = self.__unpack(size="<6d")
-        return {"Balance": content[0],
-                "Credit": content[1],
-                "Equity": content[2],
-                "Margin": content[3],
-                "FreeMargin": content[4],
-                "PreciseLeverage": content[5]}
+        content = self.__unpack(size="<2d")
+        return content[0], content[1]
 
     def unpack_symbol(self):
-        content = self.__unpack(size="<1d1i1q5d")
-        return {"Commission": content[0],
-                "Digits": content[1],
-                "LotSize": content[2],
-                "PipSize": content[3],
-                "TickSize": content[4],
-                "VolumeMin": content[5],
-                "VolumeMax": content[6],
-                "VolumeStep": content[7]}
+        content = self.__unpack(size="<1i2d")
+        return content[0], content[1], content[2]
 
     def unpack_position(self):
-        content = self.__unpack(size="<1q1b12d")
-        return {"Date": datetime.fromtimestamp(content[0] / 1000.0, tz=timezone.utc),
-                "Type": content[1],
-                "Volume": content[2],
-                "Lots": content[3],
-                "Entry": content[4],
-                "Price": content[5],
-                "StopLoss": content[6],
-                "TakeProfit": content[7],
-                "Pips": content[8],
-                "GrossNPL": content[9],
-                "Commission": content[10],
-                "Swap": content[11],
-                "NetNPL": content[12],
-                "Margin": content[13]}
+        content = self.__unpack(size="<1i1b4d")
+        sl = content[3] if not -1 else None
+        tp = content[4] if not -1 else None
+        return content[0], content[1], content[2], sl, tp, content[5]
 
     def unpack_bar(self):
         content = self.__unpack(size="<1q4d1q")
-        return {"Date": datetime.fromtimestamp(content[0] / 1000.0, tz=timezone.utc),
-                "Open": content[1],
-                "High": content[2],
-                "Low": content[3],
-                "Close": content[4],
-                "Volume": content[5]}
+        date = datetime.fromtimestamp(content[0] / 1000.0, tz=timezone.utc)
+        return date, content[1], content[2], content[3], content[4], content[5]
 
     def unpack_tick(self):
         content = self.__unpack(size="<2d")
-        return {"Ask": content[0],
-                "Bid": content[1]}
+        return content[0], content[1]
