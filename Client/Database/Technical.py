@@ -1,3 +1,4 @@
+import pandas as pd
 import talib
 import numpy as np
 
@@ -105,15 +106,15 @@ def STOCHFOSC(lib, data, fastk_period, fastd_period):
     return fastk - fastd
 
 
-def offline_technical(data, indicators):
+def offline_technical(market_data, indicators):
+    indicator_data = pd.DataFrame(index=market_data.index)
     for name, indicator in indicators.items():
-        data[name] = indicator(talib, data)
-    return data
+        indicator_data[name] = indicator(talib, market_data)
+    return indicator_data
 
 
-def online_technical(data, indicators):
-    index = data.index[-1]
+def online_technical(market_data, indicators):
+    indicator_data = []
     for name, indicator in indicators.items():
-        value = indicator(talib.stream, data)
-        data.at[index, name] = value
-    return data
+        indicator_data.append(indicator(talib.stream, market_data))
+    return indicator_data

@@ -8,12 +8,18 @@ from datetime import datetime, timezone
 
 class IdSend(Enum):
     Complete = 0
-    BullishSignal = 1
-    SidewaysSignal = 2
-    BearishSignal = 3
-    ModifyVolume = 4
-    ModifyStopLoss = 5
-    ModifyTakeProfit = 6
+    SignalBullishFixed = 1
+    SignalBullishDynamic = 2
+    SignalSideways = 3
+    SignalBearishFixed = 4
+    SignalBearishDynamic = 5
+    ModifyVolume = 6
+    ModifyStopLoss = 7
+    ModifyTakeProfit = 8
+    AskAboveTarget = 9
+    AskBelowTarget = 10
+    BidAboveTarget = 11
+    BidBelowTarget = 12
 
 
 class IdReceive(Enum):
@@ -23,19 +29,28 @@ class IdReceive(Enum):
     Symbol = 3
     OpenedBuy = 4
     OpenedSell = 5
-    ModifiedVolume = 6
-    ModifiedStopLoss = 7
-    ModifiedTakeProfit = 8
-    ClosedBuy = 9
-    ClosedSell = 10
-    Bar = 12
-    Tick = 13
+    ModifiedBuyVolume = 6
+    ModifiedBuyStopLoss = 7
+    ModifiedBuyTakeProfit = 8
+    ModifiedSellVolume = 9
+    ModifiedSellStopLoss = 10
+    ModifiedSellTakeProfit = 11
+    ClosedBuy = 12
+    ClosedSell = 13
+    Bar = 14
+    AskAboveTarget = 15
+    AskBelowTarget = 16
+    BidAboveTarget = 17
+    BidBelowTarget = 18
 
 
 class MarketDirection(Enum):
     Bullish = 1
-    Bearish = -1
     Sideways = 0
+    Bearish = -1
+
+
+Sentinel = -1.0
 
 
 class API:
@@ -70,23 +85,53 @@ class API:
     def pack_complete(self):
         self.__pack(struct.pack("<1b", IdSend.Complete.value))
 
-    def pack_bullish_signal(self, volume, sl_pips, tp_pips):
-        self.__pack(struct.pack("<1b3d", IdSend.BullishSignal.value, volume, sl_pips, tp_pips))
+    def pack_signal_bullish_fixed(self, volume, sl_pips, tp_pips):
+        sl_pips = sl_pips if sl_pips is not None else Sentinel
+        tp_pips = tp_pips if tp_pips is not None else Sentinel
+        self.__pack(struct.pack("<1b3d", IdSend.SignalBullishFixed.value, volume, sl_pips, tp_pips))
 
-    def pack_sideways_signal(self):
-        self.__pack(struct.pack("<1b", IdSend.SidewaysSignal.value))
+    def pack_signal_bullish_dynamic(self, percentage, sl_pips, tp_pips):
+        tp_pips = tp_pips if tp_pips is not None else Sentinel
+        self.__pack(struct.pack("<1b3d", IdSend.SignalBullishDynamic.value, percentage, sl_pips, tp_pips))
 
-    def pack_bearish_signal(self, volume, sl_pips, tp_pips):
-        self.__pack(struct.pack("<1b3d", IdSend.BearishSignal.value, volume, sl_pips, tp_pips))
+    def pack_signal_sideways(self):
+        self.__pack(struct.pack("<1b", IdSend.SignalSideways.value))
 
-    def pack_modify_volume(self, pid, volume):
-        self.__pack(struct.pack("<1b1i1d", IdSend.ModifyVolume.value, pid, volume))
+    def pack_signal_bearish_fixed(self, volume, sl_pips, tp_pips):
+        sl_pips = sl_pips if sl_pips is not None else Sentinel
+        tp_pips = tp_pips if tp_pips is not None else Sentinel
+        self.__pack(struct.pack("<1b3d", IdSend.SignalBearishFixed.value, volume, sl_pips, tp_pips))
 
-    def pack_modify_stop_loss(self, pid, sl_price):
-        self.__pack(struct.pack("<1b1i1d", IdSend.ModifyStopLoss.value, pid, sl_price))
+    def pack_signal_bearish_dynamic(self, volume, sl_pips, tp_pips):
+        tp_pips = tp_pips if tp_pips is not None else Sentinel
+        self.__pack(struct.pack("<1b3d", IdSend.SignalBearishDynamic.value, volume, sl_pips, tp_pips))
 
-    def pack_modify_take_profit(self, pid, tp_price):
-        self.__pack(struct.pack("<1b1i1d", IdSend.ModifyTakeProfit.value, pid, tp_price))
+    def pack_modify_volume(self, volume):
+        self.__pack(struct.pack("<1b1d", IdSend.ModifyVolume.value, volume))
+
+    def pack_modify_stop_loss(self, sl_price):
+        sl_price = sl_price if sl_price is not None else Sentinel
+        self.__pack(struct.pack("<1b1d", IdSend.ModifyStopLoss.value, sl_price))
+
+    def pack_modify_take_profit(self, tp_price):
+        tp_price = tp_price if tp_price is not None else Sentinel
+        self.__pack(struct.pack("<1b1d", IdSend.ModifyTakeProfit.value, tp_price))
+
+    def pack_ask_above_target(self, target):
+        target = target if target is not None else Sentinel
+        self.__pack(struct.pack("<1b1d", IdSend.AskAboveTarget.value, target))
+
+    def pack_ask_below_target(self, target):
+        target = target if target is not None else Sentinel
+        self.__pack(struct.pack("<1b1d", IdSend.AskBelowTarget.value, target))
+
+    def pack_bid_above_target(self, target):
+        target = target if target is not None else Sentinel
+        self.__pack(struct.pack("<1b1d", IdSend.BidAboveTarget.value, target))
+
+    def pack_bid_below_target(self, target):
+        target = target if target is not None else Sentinel
+        self.__pack(struct.pack("<1b1d", IdSend.BidBelowTarget.value, target))
 
     def __unpack(self, size):
         buffer = win32file.AllocateReadBuffer(struct.calcsize(size))
@@ -105,16 +150,17 @@ class API:
         return content[0], content[1], content[2]
 
     def unpack_position(self):
-        content = self.__unpack(size="<1i1b4d")
-        sl = content[3] if not -1 else None
-        tp = content[4] if not -1 else None
-        return content[0], content[1], content[2], sl, tp, content[5]
+        content = self.__unpack(size="<4d")
+        sl = content[2]
+        tp = content[3]
+        sl = sl if sl is not Sentinel else None
+        tp = tp if tp is not Sentinel else None
+        return content[0], content[1], sl, tp,
 
     def unpack_bar(self):
         content = self.__unpack(size="<1q4d1q")
         date = datetime.fromtimestamp(content[0] / 1000.0, tz=timezone.utc)
         return date, content[1], content[2], content[3], content[4], content[5]
 
-    def unpack_tick(self):
-        content = self.__unpack(size="<2d")
-        return content[0], content[1]
+    def unpack_target(self):
+        return self.__unpack(size="<1d")[0]

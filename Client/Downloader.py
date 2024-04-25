@@ -12,7 +12,12 @@ class Downloader(Strategy):
     def __init__(self, db, symbol, timeframe, logger):
         super().__init__(symbol, timeframe, logger)
         self.db = db
-        self.data = []
+        self.raw_dates = []
+        self.raw_open_prices = []
+        self.raw_high_prices = []
+        self.raw_low_prices = []
+        self.raw_close_prices = []
+        self.raw_volumes = []
 
     def create_signal_management(self):
         machine = Machine("Main", self.symbol, self.timeframe, self.logger)
@@ -21,20 +26,26 @@ class Downloader(Strategy):
         state1 = machine.create_state(name="Section", end=False)
         state2 = machine.create_state(name="End", end=True)
 
-        state0.on_bar_closed(trigger=None, action=self.append_data, to=state0, reason=None)
-        state0.on_complete(trigger=None, action=None, to=state1, reason="Complete")
-        state0.on_shutdown(trigger=None, action=self.save_data, to=state2, reason="Error")
+        state0.on_bar(action=self.append_data, to=state0, reason=None)
+        state0.on_complete(action=None, to=state1, reason="Complete")
+        state0.on_shutdown(action=self.save_data, to=state2, reason="Error")
 
-        state1.on_bar_closed(trigger=None, action=self.append_data, to=state1, reason=None)
-        state1.on_shutdown(trigger=None, action=self.save_data, to=state2, reason="Terminated")
+        state1.on_bar(action=self.append_data, to=state1, reason=None)
+        state1.on_shutdown(action=self.save_data, to=state2, reason="Terminated")
 
         return machine
 
-    def append_data(self, data):
-        self.data.append(data)
+    def append_data(self, date, open_price, high_price, low_price, close_price, volume):
+        self.raw_dates.append(date)
+        self.raw_open_prices.append(open_price)
+        self.raw_high_prices.append(high_price)
+        self.raw_low_prices.append(low_price)
+        self.raw_close_prices.append(close_price)
+        self.raw_volumes.append(volume)
 
     def save_data(self):
-        self.db.save_data(pd.DataFrame(self.data).set_index("Date"))
+        raw_data = {"Date": self.raw_dates, "Open": self.raw_open_prices, "High": self.raw_high_prices, "Low": self.raw_low_prices, "Close": self.raw_close_prices, "Volume": self.raw_volumes}
+        self.db.save_data(pd.DataFrame(raw_data).set_index("Date"))
         self.db.clean_data()
 
 

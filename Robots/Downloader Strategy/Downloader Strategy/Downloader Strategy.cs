@@ -14,7 +14,7 @@ public class DownloaderStrategy : Robot
     public Logger.Verbose Verbose { get; set; }
 
 
-    protected override void OnStart() { _strategy = new Downloader(this, Verbose, false); }
+    protected override void OnStart() { _strategy = new Downloader(this, Verbose); }
 
     protected override void OnError(Error error) { _strategy.OnError(error); }
 
@@ -23,7 +23,4 @@ public class DownloaderStrategy : Robot
     protected override void OnStop() { _strategy.OnShutdown(); }
 }
 
-public class Downloader : Strategy
-{
-    public Downloader(Robot robot, Logger.Verbose verbose, bool global) : base(robot, verbose, global) { }
-}
+public class Downloader : Strategy { public Downloader(Robot robot, Logger.Verbose verbose) : base(robot, verbose) { } }
