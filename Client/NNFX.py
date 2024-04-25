@@ -10,8 +10,8 @@ from Strategy.Strategy import Strategy
 
 class NNFX(Strategy):
 
-    def __init__(self, db, symbol, timeframe, logger):
-        super().__init__(symbol, timeframe, logger)
+    def __init__(self, db, iid, symbol, timeframe, logger):
+        super().__init__(iid, symbol, timeframe, logger)
 
         self.db = db
         self.raw_dates = []
@@ -160,19 +160,20 @@ class NNFX(Strategy):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--verbose", type=str, help="Logging verbose level", required=True)
+    parser.add_argument("--iid", type=str, help="InstanceId attribute from the robot", required=True)
     parser.add_argument("--symbol", type=str, help="Symbol in which the robot will operate", required=True)
     parser.add_argument("--timeframe", type=str, help="Timeframe in which the robot will operate", required=True)
+    parser.add_argument("--verbose", type=str, help="Logging verbose level", required=True)
     args = parser.parse_args()
 
-    verbose = args.verbose.upper()
+    iid = args.iid
     symbol = args.symbol.upper()
     timeframe = args.timeframe.capitalize()
-
+    verbose = args.verbose.upper()
     logger = Logger(verbose)
 
     db = Database("OHLCV", symbol, timeframe, logger)
-    strategy = NNFX(db, symbol, timeframe, logger)
+    strategy = NNFX(db, iid, symbol, timeframe, logger)
     strategy.run()
 
 

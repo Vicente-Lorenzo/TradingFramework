@@ -6,7 +6,8 @@ from .Machine import Machine
 
 class Strategy(ABC):
 
-    def __init__(self, symbol, timeframe, logger):
+    def __init__(self, iid, symbol, timeframe, logger):
+        self.iid = iid
         self.symbol = symbol
         self.timeframe = timeframe
         self.logger = logger
@@ -15,7 +16,7 @@ class Strategy(ABC):
         self.risk_machine: Machine = self.create_risk_management()
 
     def run(self):
-        with API(self.symbol, self.timeframe, self.logger) as self.api:
+        with API(self.iid, self.symbol, self.timeframe, self.logger) as self.api:
             while not (self.risk_machine.at.end and self.signal_machine.at.end):
                 call = self.api.unpack_header()
                 match call:

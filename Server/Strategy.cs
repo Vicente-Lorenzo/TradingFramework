@@ -160,13 +160,13 @@ public abstract class Strategy
         _robot.Bars.BarClosed += OnBar;
         _robot.Symbol.Tick += OnTick;
 
-        _api = new Api(_robot.SymbolName, _robot.TimeFrame.Name, _logger);
+        _api = new Api(_robot.InstanceId, _robot.SymbolName, _robot.TimeFrame.Name, _logger);
         _api.Initialize();
 
         var baseDirectory = new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName;
         var scriptName = GetType().Name;
         var scriptPath = $@"{baseDirectory}\Sources\Client\{scriptName}.py";
-        var scriptArgs = $"--verbose {verbose} --symbol {_robot.SymbolName} --timeframe {_robot.TimeFrame.Name}";
+        var scriptArgs = $"--iid {_robot.InstanceId} --symbol {_robot.SymbolName} --timeframe {_robot.TimeFrame.Name} --verbose {verbose}";
         var tabTitle = $"{scriptName} {_robot.SymbolName} {_robot.TimeFrame.Name}";
         var command = $"cmd.exe /k \"conda activate quant && python \"{scriptPath}\" {scriptArgs}\"";
         Process.Start("wt.exe", $"--window 0 new-tab --title \"{tabTitle}\" {command}");

@@ -8,6 +8,7 @@ namespace cAlgo.Robots;
 
 public class Api
 {
+    private readonly string _iid;
     private readonly string _symbol;
     private readonly string _timeframe;
     private readonly Logger _logger;
@@ -55,8 +56,9 @@ public class Api
 
     private const double Sentinel = -1.0;
 
-    public Api(string symbol, string timeframe, Logger logger)
+    public Api(string iid, string symbol, string timeframe, Logger logger)
     {
+        _iid = iid;
         _symbol = symbol;
         _timeframe = timeframe;
         _logger = logger;
@@ -65,7 +67,7 @@ public class Api
     public void Initialize()
     {
         _pipe = new NamedPipeServerStream(
-            $"{_symbol}/{_timeframe}",
+            $@"{_symbol}\{_timeframe}\{_iid}",
             PipeDirection.InOut,
             1,
             PipeTransmissionMode.Byte,

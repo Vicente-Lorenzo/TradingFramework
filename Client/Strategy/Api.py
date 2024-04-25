@@ -54,15 +54,16 @@ Sentinel = -1.0
 
 
 class API:
-    def __init__(self, symbol, timeframe, logger):
+    def __init__(self, iid, symbol, timeframe, logger):
         self.pipe = None
+        self.iid = iid
         self.symbol = symbol
         self.timeframe = timeframe
         self.logger = logger
 
     def __enter__(self):
         try:
-            self.pipe = win32file.CreateFile(f"\\\\.\\pipe\\{self.symbol}\\{self.timeframe}",
+            self.pipe = win32file.CreateFile(f"\\\\.\\pipe\\{self.symbol}\\{self.timeframe}\\{self.iid}",
                                              win32file.GENERIC_READ | win32file.GENERIC_WRITE, 0, None,
                                              win32file.OPEN_EXISTING, 0, None)
             self.logger.info(f"API {self.symbol} {self.timeframe}: Connected")
