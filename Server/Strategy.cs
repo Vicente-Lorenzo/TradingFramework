@@ -168,7 +168,7 @@ public abstract class Strategy
         var scriptPath = $@"{baseDirectory}\Sources\Client\{scriptName}.py";
         var scriptArgs = $"--iid {_robot.InstanceId} --symbol {_robot.SymbolName} --timeframe {_robot.TimeFrame.Name} --verbose {verbose}";
         var tabTitle = $"{scriptName} {_robot.SymbolName} {_robot.TimeFrame.Name}";
-        var command = $"cmd.exe /k \"conda activate quant && python \"{scriptPath}\" {scriptArgs}\"";
+        var command = $"cmd.exe /k \"conda activate trading && python \"{scriptPath}\" {scriptArgs}\"";
         Process.Start("wt.exe", $"--window 0 new-tab --title \"{tabTitle}\" {command}");
 
         _api.Connect();
